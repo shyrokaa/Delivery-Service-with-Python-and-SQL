@@ -1,0 +1,12 @@
+
+
+CREATE SCHEMA ds;
+CREATE TABLE users( FirstName varchar(100), LastName varchar(100), Email varchar(100), Phone varchar(20), City varchar(100), Street varchar(100), SNumber varchar(100), UPassword varchar(100)); 
+
+INSERT INTO users (FirstName, LastName, Email, Phone, City, Street, SNumber,UPassword)
+VALUES ('Mike', 'Bell', 'mbell@gmail.com', '0753765967', 'Iasi', 'Mihai Eminescu', '15','parola123');
+
+INSERT INTO users (FirstName, LastName, Email, Phone, City, Street, SNumber,UPassword)
+VALUES ('Sara', 'Jones', 'sarj@gmail.com', '0752525464', 'Iasi', 'Mihai Viteazu', '25','password33');
+
+SELECT * FROM users;
