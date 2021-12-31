@@ -1,8 +1,15 @@
+# imports for the interface
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import sys
 import os
+
+# imports for SQL functionality
+import mysql.connector
+
+db = mysql.connector.connect(host="localhost", user="root", passwd="root")
+mycursor = db.cursor()
 
 # some control values for this thing to check if the user is signed in + to see if the profile is found in the
 # database + to see if the password matches the one in the database + to see if the user is an admin
@@ -52,7 +59,6 @@ class MainWindow(QMainWindow):
             self.image.move(150, 10)
         else:
             print("error in image path")
-
 
         # labels
         self.title = QtWidgets.QLabel(self)
@@ -413,9 +419,9 @@ class Profile(QMainWindow):
         if os.path.isfile("Assets//default_profile_picture.png"):
             print("image loaded")
             pixmap = QPixmap("Assets//default_profile_picture.png")
-            self.image.resize(pixmap.width(),pixmap.height())
+            self.image.resize(pixmap.width(), pixmap.height())
             self.image.setPixmap(pixmap)
-            self.image.move(40,10)
+            self.image.move(40, 10)
         else:
             print("error in image path")
 
