@@ -8,9 +8,6 @@ import os
 # imports for SQL functionality
 import mysql.connector
 
-db = mysql.connector.connect(host="localhost", user="root", passwd="root")
-mycursor = db.cursor()
-
 # some control values for this thing to check if the user is signed in + to see if the profile is found in the
 # database + to see if the password matches the one in the database + to see if the user is an admin
 signedIn = True
@@ -20,13 +17,66 @@ admin = False
 
 
 # surface level information about the user of the database
+
+class DB():
+    def __init__(self):
+        self.db = mysql.connector.connect(host="localhost", user="root", passwd="root", database="ds")
+        self.command = self.db.cursor()
+
+    def select_user(self, fname, lname):
+        self.command.execute(
+            "SELECT * FROM users where FirstName LIKE '" + fname + "' AND LastName LIKE '" + lname + "';")
+        if self.command:
+
+            for item in self.command:
+                print(item)
+        else:
+            print("nobody was found")
+
+
+    def add_new_user(self, user):
+
+        # null data will produce an error signaled to user( wont parse data to database due to it being void)
+        if user.first_name != "" \
+                and user.last_name != "" \
+                and user.email != "" \
+                and user.phone != "" \
+                and user.city != "" \
+                and user.street != "" \
+                and user.number != "" \
+                and user.password != "":
+            # checking if the email was already used
+            self.command.execute(
+                "SELECT * FROM users where Email LIKE '" + user.email + "';")
+
+
+            self.command.execute(
+                "INSERT INTO users(FirstName, LastName, Email, Phone, City, Street, SNumber, UPassword) "
+                "VALUES(" +
+                "'" + user.first_name + "'," +
+                "'" + user.last_name + "'," +
+                "'" + user.email + "'," +
+                "'" + user.phone + "'," +
+                "'" + user.city + "'," +
+                "'" + user.street + "'," +
+                "'" + user.number + "'," +
+                "'" + user.password + "')")
+
+
+
+DATABASE = DB()
+DATABASE.select_user("Mike", "Zaharia")
+
+
 class User():
     def __init__(self):
         self.first_name = "John"
         self.last_name = "Doe"
         self.email = ""
         self.phone = ""
-        self.address = ""
+        self.city = ""
+        self.street = ""
+        self.number = ""
         self.password = ""
 
     def add(self, fname_in, lname_in, email_in, phone_in, address_in, password_in):
@@ -366,6 +416,9 @@ class SignUP(QMainWindow):
 
         win.user.first_name = self.fname_text.toPlainText()
         win.user.last_name = self.lname_text.toPlainText()
+
+        # entering data in the database if possible
+
         if validProfile:
             self.profile = Profile()
             self.profile.show()
