@@ -1,0 +1,25 @@
+users:
+	primary key
+	grade
+	email 
+	pass
+	location info
+	//other information that is not important
+
+
+
+drivers
+	primary key
+	name
+	phone
+	car capacity
+	car capacity in use
+	route id ( for picking the route that is used)
+	
+orders
+	primary key(will be used as order number)
+	user_id ( link it to users)
+	driver_id(link it to driver)
+		
+
+routes
