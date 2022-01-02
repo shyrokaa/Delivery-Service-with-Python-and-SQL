@@ -42,18 +42,22 @@ class DB():
 
     def look_for_user(self, email, password):
         self.command.execute(
-            "SELECT * FROM users where Email LIKE '" + email + "' AND UPassword LIKE '" + password + "';")
+            "SELECT * FROM users where Email LIKE '" + email + "';")
 
         result = self.command.fetchone()
         self.db.commit()
 
-        if result["Email"] == email:
-            if result["UPassword"] == password:
-                return 2
+        if result:
+            if result["Email"] == email:
+                if result["UPassword"] == password:
+                    return 2
+                else:
+                    return 1
             else:
-                return 1
+                return 0
         else:
             return 0
+
 
     def add_new_user(self, user):
 
@@ -96,7 +100,7 @@ class DB():
 
     def select_existing_user(self, user, email, password):
         self.command.execute(
-            "SELECT * FROM users where Email LIKE '" + email + "' AND UPassword LIKE '" + password + "';")
+            "SELECT * FROM users where Email LIKE '" + email + "';")
 
         result = self.command.fetchone()
         self.db.commit()
@@ -114,7 +118,6 @@ class DB():
 
 # global database for simplicity
 DATABASE = DB()
-DATABASE.select_user("Sara", "Jones")
 
 
 class User():
@@ -342,6 +345,11 @@ class SignIN(QMainWindow):
         self.password.setText("Password")
         self.password.move(150, 200)
 
+        self.errlabel = QtWidgets.QLabel(self)
+        self.errlabel.setText("")
+        self.errlabel.adjustSize()
+        self.errlabel.move(150, 225)
+
         self.enter_btt = QtWidgets.QPushButton(self)
         self.enter_btt.setText("Sign in")
         self.enter_btt.move(200, 250)
@@ -360,18 +368,22 @@ class SignIN(QMainWindow):
 
     def enter(self):
         # check for good pass and email in the database
-        print("data introduced into database")
 
         valid = DATABASE.look_for_user(self.email_text.toPlainText(), self.password_text.toPlainText())
 
-        if valid:
+        if valid == 2:
             print("correct")
-            DATABASE.select_existing_user(win.user,self.email_text.toPlainText(), self.password_text.toPlainText())
+            DATABASE.select_existing_user(win.user, self.email_text.toPlainText(), self.password_text.toPlainText())
             self.profile = Profile()
             self.profile.show()
             self.hide()
+        elif valid == 1:
+            self.errlabel.setText("Wrong Password")
+            self.errlabel.adjustSize()
         else:
-            print("wrong")
+            self.errlabel.setText("No Account found")
+            self.errlabel.adjustSize()
+
 
     def back(self):
         win.show()
