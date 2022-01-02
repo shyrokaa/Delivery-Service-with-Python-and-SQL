@@ -21,18 +21,39 @@ admin = False
 class DB():
     def __init__(self):
         self.db = mysql.connector.connect(host="localhost", user="root", passwd="root", database="ds")
-        self.command = self.db.cursor()
+        self.command = self.db.cursor(buffered=True, dictionary=True)
 
     def select_user(self, fname, lname):
         self.command.execute(
             "SELECT * FROM users where FirstName LIKE '" + fname + "' AND LastName LIKE '" + lname + "';")
-        if self.command:
+        found = 0
 
-            for item in self.command:
-                print(item)
+        result = self.command.fetchone()
+        print(result)
+
+        for item in self.command:
+            found = found + 1
+
+        self.db.commit()
+        if found == 0:
+            return 0
         else:
-            print("nobody was found")
+            return 1
 
+    def look_for_user(self, email, password):
+        self.command.execute(
+            "SELECT * FROM users where Email LIKE '" + email + "' AND UPassword LIKE '" + password + "';")
+
+        result = self.command.fetchone()
+        self.db.commit()
+
+        if result["Email"] == email:
+            if result["UPassword"] == password:
+                return 2
+            else:
+                return 1
+        else:
+            return 0
 
     def add_new_user(self, user):
 
@@ -46,32 +67,60 @@ class DB():
                 and user.number != "" \
                 and user.password != "":
             # checking if the email was already used
-            self.command.execute(
-                "SELECT * FROM users where Email LIKE '" + user.email + "';")
+            self.command.execute("SELECT * FROM users where Email LIKE '" + user.email + "';")
+            found = 0
+            for item in self.command:
+                found = found + 1
+                print(item)
+
+            if found == 0:
+                # empty space found
+                self.command.execute(
+                    "INSERT INTO users(FirstName, LastName, Email, Phone, City, Street, SNumber, UPassword) "
+                    "VALUES(" +
+                    "'" + user.first_name + "'," +
+                    "'" + user.last_name + "'," +
+                    "'" + user.email + "'," +
+                    "'" + user.phone + "'," +
+                    "'" + user.city + "'," +
+                    "'" + user.street + "'," +
+                    "'" + user.number + "'," +
+                    "'" + user.password + "')")
+                self.db.commit()
+                return 1
+            else:
+                # there is no empty space there
+                return 0
+        else:
+            return 0
+
+    def select_existing_user(self, user, email, password):
+        self.command.execute(
+            "SELECT * FROM users where Email LIKE '" + email + "' AND UPassword LIKE '" + password + "';")
+
+        result = self.command.fetchone()
+        self.db.commit()
+
+        user.add(
+            result["FirstName"],
+            result["LastName"],
+            result["Email"],
+            result["Phone"],
+            result["City"],
+            result["Street"],
+            result["SNumber"],
+            result["UPassword"])
 
 
-            self.command.execute(
-                "INSERT INTO users(FirstName, LastName, Email, Phone, City, Street, SNumber, UPassword) "
-                "VALUES(" +
-                "'" + user.first_name + "'," +
-                "'" + user.last_name + "'," +
-                "'" + user.email + "'," +
-                "'" + user.phone + "'," +
-                "'" + user.city + "'," +
-                "'" + user.street + "'," +
-                "'" + user.number + "'," +
-                "'" + user.password + "')")
-
-
-
+# global database for simplicity
 DATABASE = DB()
-DATABASE.select_user("Mike", "Zaharia")
+DATABASE.select_user("Sara", "Jones")
 
 
 class User():
     def __init__(self):
-        self.first_name = "John"
-        self.last_name = "Doe"
+        self.first_name = ""
+        self.last_name = ""
         self.email = ""
         self.phone = ""
         self.city = ""
@@ -79,12 +128,14 @@ class User():
         self.number = ""
         self.password = ""
 
-    def add(self, fname_in, lname_in, email_in, phone_in, address_in, password_in):
+    def add(self, fname_in, lname_in, email_in, phone_in, city_in, street_in, number_in, password_in):
         self.first_name = fname_in
         self.last_name = lname_in
         self.email = email_in
         self.phone = phone_in
-        self.address = address_in
+        self.city = city_in
+        self.street = street_in
+        self.number = number_in
         self.password = password_in
 
 
@@ -310,10 +361,17 @@ class SignIN(QMainWindow):
     def enter(self):
         # check for good pass and email in the database
         print("data introduced into database")
-        if validPass:
+
+        valid = DATABASE.look_for_user(self.email_text.toPlainText(), self.password_text.toPlainText())
+
+        if valid:
+            print("correct")
+            DATABASE.select_existing_user(win.user,self.email_text.toPlainText(), self.password_text.toPlainText())
             self.profile = Profile()
             self.profile.show()
             self.hide()
+        else:
+            print("wrong")
 
     def back(self):
         win.show()
@@ -335,6 +393,13 @@ class SignUP(QMainWindow):
         self.title.setText("Sign Up")
         self.title.adjustSize()
         self.title.move(200, 20)
+
+        # bad input
+        self.binput = QtWidgets.QLabel(self)
+        self.binput.setFont(QFont('Arial', 10))
+        self.binput.setText("")
+        self.binput.adjustSize()
+        self.binput.move(400, 400)
 
         self.fname = QtWidgets.QLabel(self)
         self.fname.setFont(QFont('Arial', 10))
@@ -360,17 +425,29 @@ class SignUP(QMainWindow):
         self.phone.adjustSize()
         self.phone.move(150, 250)
 
-        self.address = QtWidgets.QLabel(self)
-        self.address.setFont(QFont('Arial', 10))
-        self.address.setText("Address")
-        self.address.adjustSize()
-        self.address.move(150, 300)
+        self.city = QtWidgets.QLabel(self)
+        self.city.setFont(QFont('Arial', 10))
+        self.city.setText("City")
+        self.city.adjustSize()
+        self.city.move(150, 300)
+
+        self.street = QtWidgets.QLabel(self)
+        self.street.setFont(QFont('Arial', 10))
+        self.street.setText("Street")
+        self.street.adjustSize()
+        self.street.move(150, 350)
+
+        self.number = QtWidgets.QLabel(self)
+        self.number.setFont(QFont('Number', 10))
+        self.number.setText("Number")
+        self.number.adjustSize()
+        self.number.move(150, 400)
 
         self.password = QtWidgets.QLabel(self)
         self.password.setFont(QFont('Arial', 10))
         self.password.setText("Password")
         self.password.adjustSize()
-        self.password.move(150, 350)
+        self.password.move(150, 450)
 
         # buttons
 
@@ -378,7 +455,7 @@ class SignUP(QMainWindow):
 
         self.enter_btt = QtWidgets.QPushButton(self)
         self.enter_btt.setText("Sign up")
-        self.enter_btt.move(200, 400)
+        self.enter_btt.move(400, 450)
         self.enter_btt.clicked.connect(self.enter)
 
         # return to main window for more information
@@ -402,27 +479,45 @@ class SignUP(QMainWindow):
         self.phone_text = QtWidgets.QTextEdit(self)
         self.phone_text.move(260, 245)
 
-        self.address_text = QtWidgets.QTextEdit(self)
-        self.address_text.move(260, 295)
+        self.city_text = QtWidgets.QTextEdit(self)
+        self.city_text.move(260, 295)
+
+        self.street_text = QtWidgets.QTextEdit(self)
+        self.street_text.move(260, 345)
+
+        self.number_text = QtWidgets.QTextEdit(self)
+        self.number_text.move(260, 395)
 
         self.password_text = QtWidgets.QTextEdit(self)
-        self.password_text.move(260, 345)
+        self.password_text.move(260, 445)
 
     def enter(self):
         print("data introduced into database")
 
-        # checks for information validity for insertion and such by doing a select and seeing if email is already used
-        # i will say its true for now coz im a lazy fuck
-
-        win.user.first_name = self.fname_text.toPlainText()
-        win.user.last_name = self.lname_text.toPlainText()
+        # adding on screen information to the user
+        win.user.add(
+            self.fname_text.toPlainText(),
+            self.lname_text.toPlainText(),
+            self.email_text.toPlainText(),
+            self.phone_text.toPlainText(),
+            self.city_text.toPlainText(),
+            self.street_text.toPlainText(),
+            self.number_text.toPlainText(),
+            self.password_text.toPlainText())
 
         # entering data in the database if possible
 
-        if validProfile:
+        valid = DATABASE.add_new_user(win.user)
+        DATABASE.select_user("Mickey", "Ionescu")
+        if valid:
             self.profile = Profile()
             self.profile.show()
             self.hide()
+            self.binput.setText("")
+            self.binput.adjustSize()
+        else:
+            self.binput.setText("Invalid Data")
+            self.binput.adjustSize()
 
     def back(self):
         win.show()
