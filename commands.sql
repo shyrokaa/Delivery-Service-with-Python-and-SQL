@@ -23,17 +23,14 @@ SELECT * FROM drivers;
 CREATE TABLE orders(orderID INT(4) NOT NULL AUTO_INCREMENT,userID INT(4), driverID int, weight int,FOREIGN KEY (userID) REFERENCES users(userID),FOREIGN KEY (driverID) REFERENCES drivers(driverID),PRIMARY KEY(orderID));
 SELECT * FROM orders;
 
-
 # RELATIONSHIPS BETWEEN TABLES
+# ONE TO ONE   - > users (userID)   ---  address(userID)
 
-# ONE TO ONE   - > users (userID)   --- address(userID)
+# ONE TO MANY  - > users (userID)   ---  orders(userID) 
+#			   - > driver(driverID) ---  orders(driverID) 
 
-# ONE TO MANY  - > users (userID)   --- orders(userID) 
-#			   - > driver(driverID) --- orders(driverID) 
-
-# MANY TO MANY - > users(userID)    --- drivers(driverID)
+# MANY TO MANY - > users(userID)    ---  drivers(driverID)
 # intermediary table = orders
-
 
 # INSERTS FOR SOME EXISTING DATA
 
@@ -45,18 +42,25 @@ INSERT INTO users (userType, FirstName, LastName, Email, Phone, UPassword) VALUE
 SELECT * FROM users;
 
 # address
-INSERT INTO address(userID,City,Street,Number) VALUES ( 1 , 'Iasi', 'Mihai Eminescu', '15');
-INSERT INTO address(userID,City,Street,Number) VALUES ( 2 , 'Iasi', 'Mihai Viteazu', '24');
-
+INSERT INTO address(City,Street,Number) VALUES ('Iasi', 'Mihai Eminescu', '15');
+INSERT INTO address(City,Street,Number) VALUES ('Iasi', 'Mihai Viteazu', '24');
+INSERT INTO address(City,Street,Number) VALUES ('Bacau', 'Zamfirei', '13');
 SELECT * FROM address;
 
+# routes
 
+INSERT INTO routes(startCity, interCity1,interCity2,stopCity) VALUES ('Iasi','Roman','Piatra-Neamt','Bacau');
+INSERT INTO routes(startCity, interCity1,interCity2,stopCity) VALUES ('Bacau','Piatra-Neamt','Roman','Iasi');
 
+SELECT * FROM routes;
+
+# some join test
 SELECT u.FirstName , u.LastName, u.Email, u.Phone, a.City, a.Street, a.Number, u.UPassword FROM users u, address a WHERE u.userID = a.userID;
 
+# some concat
+SELECT routeID, CONCAT(startCity ,' ', interCity1 ,' ', interCity2 ,' ', stopCity) AS Route FROM routes where routeID = 1;
 
 # emergency wipe
-
 drop table orders;
 drop table drivers;
 drop table routes;

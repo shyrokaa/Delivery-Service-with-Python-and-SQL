@@ -58,7 +58,6 @@ class DB():
         else:
             return 0
 
-
     def add_new_user(self, user):
 
         # null data will produce an error signaled to user( wont parse data to database due to it being void)
@@ -80,16 +79,21 @@ class DB():
             if found == 0:
                 # empty space found
                 self.command.execute(
-                    "INSERT INTO users(FirstName, LastName, Email, Phone, City, Street, SNumber, UPassword) "
-                    "VALUES(" +
+                    "INSERT INTO users(userType,FirstName, LastName, Email, Phone, UPassword) "
+                    "VALUES( 0, " +
                     "'" + user.first_name + "'," +
                     "'" + user.last_name + "'," +
                     "'" + user.email + "'," +
                     "'" + user.phone + "'," +
+                    "'" + user.password + "')")
+
+                self.command.execute(
+                    "INSERT INTO address(City,Street,Number) "
+                    "VALUES(  " +
                     "'" + user.city + "'," +
                     "'" + user.street + "'," +
-                    "'" + user.number + "'," +
-                    "'" + user.password + "')")
+                    "'" + user.number + "')")
+
                 self.db.commit()
                 return 1
             else:
@@ -98,9 +102,27 @@ class DB():
         else:
             return 0
 
+    def loadRoute(self, table):
+        print("ceva")
+        i = 1
+        end = 0
+        while end == 0:
+
+            self.command.execute("SELECT routeID , CONCAT(startCity ,' ', interCity1 ,' ', interCity2 ,' ', stopCity) AS Route FROM routes WHERE routeID =" + str(i))
+            result = self.command.fetchone()
+            if result:
+                print(result["routeID"])
+                table.setItem(i - 1, 0, QTableWidgetItem(str(result["routeID"])))
+                table.setItem(i - 1, 1, QTableWidgetItem(result["Route"]))
+                i = i + 1
+            else:
+                end = 1
+
     def select_existing_user(self, user, email, password):
         self.command.execute(
-            "SELECT u.FirstName , u.LastName, u.Email, u.Phone, a.City, a.Street, a.Number, u.UPassword FROM users u, address a WHERE u.userID = a.userID AND u.Email LIKE '" + email + "';")
+            "SELECT u.FirstName , u.LastName, u.Email, u.Phone, a.City, a.Street, a.Number, u.UPassword " +
+            "FROM users u, address a " +
+            "WHERE u.userID = a.userID AND u.Email LIKE '" + email + "';")
 
         result = self.command.fetchone()
         self.db.commit()
@@ -119,9 +141,9 @@ class DB():
 # global database for simplicity
 DATABASE = DB()
 
+
 class User():
     def __init__(self):
-
         self.first_name = ""
         self.last_name = ""
         self.email = ""
@@ -145,7 +167,6 @@ class User():
         self.grade = ""
 
     def add(self, fname_in, lname_in, email_in, phone_in, city_in, street_in, number_in, password_in):
-
         self.first_name = fname_in
         self.last_name = lname_in
         self.email = email_in
@@ -398,7 +419,6 @@ class SignIN(QMainWindow):
             self.errlabel.setText("No Account found")
             self.errlabel.adjustSize()
 
-
     def back(self):
         win.show()
         self.hide()
@@ -553,7 +573,7 @@ class SignUP(QMainWindow):
 class Routes(QMainWindow):
     def __init__(self):
         super(Routes, self).__init__()
-        self.setGeometry(200, 200, 1000, 800)
+        self.setGeometry(200, 200, 500, 500)
         self.setWindowTitle("Routes")
         self.initUI()
 
@@ -563,13 +583,22 @@ class Routes(QMainWindow):
         self.title.setFont(QFont('Arial', 20))
         self.title.setText("Available Routes")
         self.title.adjustSize()
-        self.title.move(350, 20)
+        self.title.move(150, 20)
+
+        # table to display the routes in the table
+        self.tableWidget = QtWidgets.QTableWidget(self)
+        self.tableWidget.setRowCount(5)
+        self.tableWidget.setColumnCount(2)
+        self.tableWidget.setColumnWidth(0, 100)
+        self.tableWidget.setColumnWidth(1, 200)
+        self.tableWidget.resize(350, 350)
+        self.tableWidget.move(150, 100)
+        DATABASE.loadRoute(self.tableWidget)
 
         # buttons
-
         self.back_btt = QtWidgets.QPushButton(self)
         self.back_btt.setText("Home")
-        self.back_btt.move(900, 0)
+        self.back_btt.move(400, 0)
         self.back_btt.clicked.connect(self.back)
 
     def back(self):
@@ -678,7 +707,7 @@ class Profile(QMainWindow):
 class Orders(QMainWindow):
     def __init__(self):
         super(Orders, self).__init__()
-        self.setGeometry(200, 200, 1000, 800)
+        self.setGeometry(200, 200, 500, 500)
         self.setWindowTitle("Profile")
         self.initUI()
 
@@ -694,6 +723,5 @@ class Orders(QMainWindow):
 def main():
     win.show()
     sys.exit(app.exec_())
-
 
 main()
