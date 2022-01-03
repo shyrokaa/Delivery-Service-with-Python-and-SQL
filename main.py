@@ -100,7 +100,7 @@ class DB():
 
     def select_existing_user(self, user, email, password):
         self.command.execute(
-            "SELECT * FROM users where Email LIKE '" + email + "';")
+            "SELECT u.FirstName , u.LastName, u.Email, u.Phone, a.City, a.Street, a.Number, u.UPassword FROM users u, address a WHERE u.userID = a.userID AND u.Email LIKE '" + email + "';")
 
         result = self.command.fetchone()
         self.db.commit()
@@ -112,7 +112,7 @@ class DB():
             result["Phone"],
             result["City"],
             result["Street"],
-            result["SNumber"],
+            result["Number"],
             result["UPassword"])
 
 
@@ -140,11 +140,12 @@ class User():
         # manager should be able to:
         # create routes for the drivers
         # remove or mark orders as completed for each user
-        # 
+        #
 
         self.grade = ""
 
     def add(self, fname_in, lname_in, email_in, phone_in, city_in, street_in, number_in, password_in):
+
         self.first_name = fname_in
         self.last_name = lname_in
         self.email = email_in
@@ -361,7 +362,7 @@ class SignIN(QMainWindow):
         self.errlabel = QtWidgets.QLabel(self)
         self.errlabel.setText("")
         self.errlabel.adjustSize()
-        self.errlabel.move(150, 225)
+        self.errlabel.move(150, 300)
 
         self.enter_btt = QtWidgets.QPushButton(self)
         self.enter_btt.setText("Sign in")
