@@ -6,8 +6,10 @@ import sys
 import os
 
 # imports for SQL functionality
-import mysql.connector
 
+from Database import *
+from User import *
+from stringFunctions import *
 # some control values for this thing to check if the user is signed in + to see if the profile is found in the
 # database + to see if the password matches the one in the database + to see if the user is an admin
 signedIn = True
@@ -18,163 +20,10 @@ admin = False
 
 # surface level information about the user of the database
 
-class DB():
-    def __init__(self):
-        self.db = mysql.connector.connect(host="localhost", user="root", passwd="root", database="ds")
-        self.command = self.db.cursor(buffered=True, dictionary=True)
-
-    def select_user(self, fname, lname):
-        self.command.execute(
-            "SELECT * FROM users where FirstName LIKE '" + fname + "' AND LastName LIKE '" + lname + "';")
-        found = 0
-
-        result = self.command.fetchone()
-        print(result)
-
-        for item in self.command:
-            found = found + 1
-
-        self.db.commit()
-        if found == 0:
-            return 0
-        else:
-            return 1
-
-    def look_for_user(self, email, password):
-        self.command.execute(
-            "SELECT * FROM users where Email LIKE '" + email + "';")
-
-        result = self.command.fetchone()
-        self.db.commit()
-
-        if result:
-            if result["Email"] == email:
-                if result["UPassword"] == password:
-                    return 2
-                else:
-                    return 1
-            else:
-                return 0
-        else:
-            return 0
-
-    def add_new_user(self, user):
-
-        # null data will produce an error signaled to user( wont parse data to database due to it being void)
-        if user.first_name != "" \
-                and user.last_name != "" \
-                and user.email != "" \
-                and user.phone != "" \
-                and user.city != "" \
-                and user.street != "" \
-                and user.number != "" \
-                and user.password != "":
-            # checking if the email was already used
-            self.command.execute("SELECT * FROM users where Email LIKE '" + user.email + "';")
-            found = 0
-            for item in self.command:
-                found = found + 1
-                print(item)
-
-            if found == 0:
-                # empty space found
-                self.command.execute(
-                    "INSERT INTO users(userType,FirstName, LastName, Email, Phone, UPassword) "
-                    "VALUES( 0, " +
-                    "'" + user.first_name + "'," +
-                    "'" + user.last_name + "'," +
-                    "'" + user.email + "'," +
-                    "'" + user.phone + "'," +
-                    "'" + user.password + "')")
-
-                self.command.execute(
-                    "INSERT INTO address(City,Street,Number) "
-                    "VALUES(  " +
-                    "'" + user.city + "'," +
-                    "'" + user.street + "'," +
-                    "'" + user.number + "')")
-
-                self.db.commit()
-                return 1
-            else:
-                # there is no empty space there
-                return 0
-        else:
-            return 0
-
-    def loadRoute(self, table):
-        print("ceva")
-        i = 1
-        end = 0
-        while end == 0:
-
-            self.command.execute("SELECT routeID , CONCAT(startCity ,' ', interCity1 ,' ', interCity2 ,' ', stopCity) AS Route FROM routes WHERE routeID =" + str(i))
-            result = self.command.fetchone()
-            if result:
-                print(result["routeID"])
-                table.setItem(i - 1, 0, QTableWidgetItem(str(result["routeID"])))
-                table.setItem(i - 1, 1, QTableWidgetItem(result["Route"]))
-                i = i + 1
-            else:
-                end = 1
-
-    def select_existing_user(self, user, email, password):
-        self.command.execute(
-            "SELECT u.FirstName , u.LastName, u.Email, u.Phone, a.City, a.Street, a.Number, u.UPassword " +
-            "FROM users u, address a " +
-            "WHERE u.userID = a.userID AND u.Email LIKE '" + email + "';")
-
-        result = self.command.fetchone()
-        self.db.commit()
-
-        user.add(
-            result["FirstName"],
-            result["LastName"],
-            result["Email"],
-            result["Phone"],
-            result["City"],
-            result["Street"],
-            result["Number"],
-            result["UPassword"])
 
 
 # global database for simplicity
 DATABASE = DB()
-
-
-class User():
-    def __init__(self):
-        self.first_name = ""
-        self.last_name = ""
-        self.email = ""
-        self.phone = ""
-        self.city = ""
-        self.street = ""
-        self.number = ""
-        self.password = ""
-
-        # grade - to make a distinction between regular user | manager
-
-        # regular user should be able to:
-        # create orders
-        # view his own orders
-
-        # manager should be able to:
-        # create routes for the drivers
-        # remove or mark orders as completed for each user
-        #
-
-        self.grade = ""
-
-    def add(self, fname_in, lname_in, email_in, phone_in, city_in, street_in, number_in, password_in):
-        self.first_name = fname_in
-        self.last_name = lname_in
-        self.email = email_in
-        self.phone = phone_in
-        self.city = city_in
-        self.street = street_in
-        self.number = number_in
-        self.password = password_in
 
 
 class MainWindow(QMainWindow):
@@ -654,6 +503,20 @@ class Profile(QMainWindow):
 
         # profile biz
 
+        # user id
+
+        self.uid_label = QtWidgets.QLabel(self)
+        self.uid_label.setFont(QFont('Arial', 10))
+        self.uid_label.setText("User ID:")
+        self.uid_label.adjustSize()
+        self.uid_label.move(300, 50)
+
+        self.uid = QtWidgets.QLabel(self)
+        self.uid.setFont(QFont('Arial', 10))
+        self.uid.setText(win.user.uid)
+        self.uid.adjustSize()
+        self.uid.move(380, 50)
+
         # first name
         self.first_name_label = QtWidgets.QLabel(self)
         self.first_name_label.setFont(QFont('Arial', 10))
@@ -717,7 +580,17 @@ class Orders(QMainWindow):
         self.title.setFont(QFont('Arial', 20))
         self.title.setText("Your Orders")
         self.title.adjustSize()
-        self.title.move(350, 100)
+        self.title.move(150, 100)
+
+        self.back_btt = QtWidgets.QPushButton(self)
+        self.back_btt.setText("Back")
+        self.back_btt.move(400, 0)
+        self.back_btt.clicked.connect(self.back)
+
+    def back(self):
+        self.hide()
+        win.sin.profile.show()
+
 
 
 def main():
