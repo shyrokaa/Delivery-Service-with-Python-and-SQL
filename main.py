@@ -9,6 +9,7 @@ import os
 
 from Database import *
 from User import *
+from Order import *
 from stringFunctions import *
 # some control values for this thing to check if the user is signed in + to see if the profile is found in the
 # database + to see if the password matches the one in the database + to see if the user is an admin
@@ -403,7 +404,7 @@ class SignUP(QMainWindow):
         # entering data in the database if possible
 
         valid = DATABASE.add_new_user(win.user)
-        DATABASE.select_user("Mickey", "Ionescu")
+
         if valid:
             self.profile = Profile()
             self.profile.show()
@@ -580,7 +581,22 @@ class Orders(QMainWindow):
         self.title.setFont(QFont('Arial', 20))
         self.title.setText("Your Orders")
         self.title.adjustSize()
-        self.title.move(150, 100)
+        self.title.move(150, 50)
+
+        #table of orders
+
+        self.tableWidget = QtWidgets.QTableWidget(self)
+        self.tableWidget.setRowCount(10)
+        self.tableWidget.setColumnCount(4)
+        self.tableWidget.setColumnWidth(0, 20)
+        self.tableWidget.setColumnWidth(1, 20)
+        self.tableWidget.setColumnWidth(2, 80)
+        self.tableWidget.setColumnWidth(3, 180)
+
+        self.tableWidget.resize(360, 400)
+        self.tableWidget.move(75, 100)
+
+        DATABASE.loadOrders(self.tableWidget)
 
         self.back_btt = QtWidgets.QPushButton(self)
         self.back_btt.setText("Back")

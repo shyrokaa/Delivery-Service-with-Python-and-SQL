@@ -65,12 +65,17 @@ class DB:
                 found = found + 1
                 print(item)
 
+            self.command.execute("SELECT userID FROM users ORDER BY userID DESC LIMIT 1;")
+            result = self.command.fetchone()
+            new_id = result["userID"] + 1
+
             if found == 0:
                 # empty space found
                 self.command.execute(
-                    "INSERT INTO users(userType,FirstName, LastName, Email, Phone, UPassword) "
-                    "VALUES( 0, " +
-                    "" + user.type + "," +
+                    "INSERT INTO users(userID,userType,FirstName, LastName, Email, Phone, UPassword) "
+                    "VALUES(" +
+                    str(new_id) + "," +
+                    str(user.type) + "," +
                     "'" + user.first_name + "'," +
                     "'" + user.last_name + "'," +
                     "'" + user.email + "'," +
@@ -78,8 +83,9 @@ class DB:
                     "'" + user.password + "')")
 
                 self.command.execute(
-                    "INSERT INTO address(City,Street,Number) "
-                    "VALUES(  " +
+                    "INSERT INTO address(userID,City,Street,Number) "
+                    "VALUES(" +
+                    str(new_id) + "," +
                     "'" + user.city + "'," +
                     "'" + user.street + "'," +
                     "'" + user.number + "')")
@@ -91,6 +97,27 @@ class DB:
                 return 0
         else:
             return 0
+
+    def add_new_order(self, order, user):
+        # considering order being loaded in already
+        print("ceva")
+
+        # case 1) start of route is the city of the pick-up point
+        self.command.execute("SELECT startCity  FROM routes WHERE startCity LIKE '" + user.city + "'")
+        start_results = self.command.fetchone()
+        if start_results:
+            # case A destination in the intermediary city 1
+            self.command.execute("SELECT interCity  FROM routes WHERE startCity LIKE '" + user.City + "' AND interCity1 LIKE '" + order.City + "'")
+            destination_results = self.command.fetchone()
+            if destination_results:
+                # some routes were found
+                # add driver finding phase
+                print(destination_results)
+
+
+
+
+
 
     def loadRoute(self, table):
         print("ceva")
@@ -107,6 +134,26 @@ class DB:
                 print(result["routeID"])
                 table.setItem(i - 1, 0, QTableWidgetItem(str(result["routeID"])))
                 table.setItem(i - 1, 1, QTableWidgetItem(result["Route"]))
+                i = i + 1
+            else:
+                end = 1
+
+    def loadOrders(self, table):
+        print("ceva")
+        i = 1
+        end = 0
+        while end == 0:
+            self.command.execute(
+                "SELECT o.orderID, o.driverID, o.name ,CONCAT(d.City, ' Str.', d.Street, ' Nr.', d.Number) " +
+                "AS Address FROM orders o, destinations d WHERE o.orderID = " + str(i))
+            result = self.command.fetchone()
+            if result:
+
+                table.setItem(i - 1, 0, QTableWidgetItem(str(result["orderID"])))
+                table.setItem(i - 1, 1, QTableWidgetItem(str(result["driverID"])))
+                table.setItem(i - 1, 2, QTableWidgetItem(result["name"]))
+                table.setItem(i - 1, 3, QTableWidgetItem(result["Address"]))
+
                 i = i + 1
             else:
                 end = 1

@@ -2,7 +2,7 @@ class User:
     def __init__(self):
 
         self.uid = ""
-        self.type = "0"
+        self.type = 0
         self.first_name = ""
         self.last_name = ""
         self.email = ""
@@ -25,7 +25,7 @@ class User:
 
 
 
-    def add(self, uid_in, fname_in, lname_in, email_in, phone_in, city_in, street_in, number_in, password_in):
+    def add(self ,uid_in, fname_in, lname_in, email_in, phone_in, city_in, street_in, number_in, password_in):
         self.uid = uid_in
         self.first_name = fname_in
         self.last_name = lname_in
