@@ -11,6 +11,7 @@ from Database import *
 from User import *
 from Order import *
 from stringFunctions import *
+
 # some control values for this thing to check if the user is signed in + to see if the profile is found in the
 # database + to see if the password matches the one in the database + to see if the user is an admin
 signedIn = True
@@ -18,13 +19,12 @@ validProfile = True
 validPass = True
 admin = False
 
-
 # surface level information about the user of the database
-
 
 
 # global database for simplicity
 DATABASE = DB()
+
 
 
 class MainWindow(QMainWindow):
@@ -36,6 +36,7 @@ class MainWindow(QMainWindow):
         self.initUI()
         # user is defined here for simplicity
         self.user = User()
+        self.order = Order()
 
     def initUI(self):
         self.image = QtWidgets.QLabel(self)
@@ -92,7 +93,7 @@ class MainWindow(QMainWindow):
         self.rou.show()
 
 
-# global main window for easyer access to it and such
+# global main window for easier access to it and such
 app = QApplication(sys.argv)
 win = MainWindow()
 
@@ -100,112 +101,85 @@ win = MainWindow()
 class NewOrder(QMainWindow):
     def __init__(self):
         super(NewOrder, self).__init__()
-        self.setGeometry(200, 200, 1000, 800)
+        self.setGeometry(200, 200, 500, 500)
         self.setWindowTitle("New Order")
         self.initUI()
 
     def initUI(self):
-        # oras
-        # strada
-        # numar
-
-        # greutate colet
-
-        self.title = QtWidgets.QLabel(self)
-        self.title.setFont(QFont('Arial', 20))
-        self.title.setText("New Delivery Order")
-        self.title.adjustSize()
-        self.title.move(350, 20)
-
-        # Pick UP information
-
-        self.tab1 = QtWidgets.QLabel(self)
-        self.tab1.setText("Pick UP")
-        self.tab1.move(150, 100)
-
-        self.city1 = QtWidgets.QLabel(self)
-        self.city1.setText("City")
-        self.city1.move(100, 150)
-
-        self.street1 = QtWidgets.QLabel(self)
-        self.street1.setText("Street")
-        self.street1.move(100, 200)
-
-        self.number1 = QtWidgets.QLabel(self)
-        self.number1.setText("Number")
-        self.number1.move(100, 250)
-
-        self.city1_text = QtWidgets.QTextEdit(self)
-        self.city1_text.move(150, 150)
-
-        self.street1_text = QtWidgets.QTextEdit(self)
-        self.street1_text.move(150, 200)
-
-        self.number1_text = QtWidgets.QTextEdit(self)
-        self.number1_text.move(150, 250)
-
         # Drop OFF information
-
         self.tab2 = QtWidgets.QLabel(self)
         self.tab2.setText("Drop OFF")
-        self.tab2.move(650, 100)
+        self.tab2.move(150, 50)
+
+        self.name2 = QtWidgets.QLabel(self)
+        self.name2.setText("Name")
+        self.name2.move(150, 100)
 
         self.city2 = QtWidgets.QLabel(self)
         self.city2.setText("City")
-        self.city2.move(600, 150)
+        self.city2.move(150, 150)
 
         self.street2 = QtWidgets.QLabel(self)
         self.street2.setText("Street")
-        self.street2.move(600, 200)
+        self.street2.move(150, 200)
 
         self.number2 = QtWidgets.QLabel(self)
         self.number2.setText("Number")
-        self.number2.move(600, 250)
+        self.number2.move(150, 250)
 
-        self.city2_text = QtWidgets.QTextEdit(self)
-        self.city2_text.move(650, 150)
-
-        self.street2_text = QtWidgets.QTextEdit(self)
-        self.street2_text.move(650, 200)
-
-        self.number2_text = QtWidgets.QTextEdit(self)
-        self.number2_text.move(650, 250)
-
-        # weight of the object
         self.weight = QtWidgets.QLabel(self)
         self.weight.setText("Weight")
-        self.weight.move(350, 300)
+        self.weight.move(150, 300)
+
+        self.error = QtWidgets.QLabel(self)
+        self.error.setText("")
+        self.error.move(50, 300)
+
+        self.name2_text = QtWidgets.QTextEdit(self)
+        self.name2_text.move(200, 100)
+
+        self.city2_text = QtWidgets.QTextEdit(self)
+        self.city2_text.move(200, 150)
+
+        self.street2_text = QtWidgets.QTextEdit(self)
+        self.street2_text.move(200, 200)
+
+        self.number2_text = QtWidgets.QTextEdit(self)
+        self.number2_text.move(200, 250)
 
         self.weight_text = QtWidgets.QTextEdit(self)
-        self.weight_text.move(400, 300)
-
-        # annotations
-
-        self.details = QtWidgets.QLabel(self)
-        self.details.setText("*Notes")
-        self.details.move(350, 350)
-
-        self.details_text = QtWidgets.QTextEdit(self)
-        self.details_text.move(400, 350)
+        self.weight_text.move(200, 300)
 
         # buttons and stuff
         self.back_btt = QtWidgets.QPushButton(self)
         self.back_btt.setText("Home")
-        self.back_btt.move(900, 0)
+        self.back_btt.move(400, 0)
         self.back_btt.clicked.connect(self.back)
 
         self.enter_btt = QtWidgets.QPushButton(self)
         self.enter_btt.setText("Place order")
-        self.enter_btt.move(400, 400)
+        self.enter_btt.move(200, 350)
         self.enter_btt.clicked.connect(self.enter)
 
     def enter(self):
         # check for good pass and email in the database
         print("data introduced into database")
+        win.order.add_base_data(self.name2_text.toPlainText(),
+                                self.city2_text.toPlainText(),
+                                self.street2_text.toPlainText(),
+                                self.number2_text.toPlainText(),
+                                self.weight_text.toPlainText())
+
+        err = DATABASE.add_new_order(win.order, win.user)
+        if not err:
+            self.error.setText("No Driver Found")
+            self.error.adjustSize()
+            self.hide()
+            win.sin.profile.show()
 
     def back(self):
-        win.show()
         self.hide()
+        win.sin.profile.show()
 
 
 class SignIN(QMainWindow):
@@ -555,17 +529,10 @@ class Profile(QMainWindow):
         self.hide()
 
     def newOrder(self):
+        self.newo = NewOrder()
+        self.newo.show()
+        self.hide()
 
-        if (signedIn):
-            # proceed directly to the order
-            self.newo = NewOrder()
-            self.newo.show()
-            self.hide()
-        else:
-            # sign in then proceed to order
-            self.sin = SignIN()
-            self.sin.show()
-            self.hide()
 
 
 class Orders(QMainWindow):
@@ -583,7 +550,7 @@ class Orders(QMainWindow):
         self.title.adjustSize()
         self.title.move(150, 50)
 
-        #table of orders
+        # table of orders
 
         self.tableWidget = QtWidgets.QTableWidget(self)
         self.tableWidget.setRowCount(10)
@@ -608,9 +575,9 @@ class Orders(QMainWindow):
         win.sin.profile.show()
 
 
-
 def main():
     win.show()
     sys.exit(app.exec_())
+
 
 main()

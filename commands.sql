@@ -74,6 +74,10 @@ SELECT u.FirstName , u.LastName, u.Email, u.Phone, a.City, a.Street, a.Number, u
 # for the orders table in python
 SELECT o.orderID, o.driverID, o.name ,CONCAT(d.City," Str.", d.Street, " Nr.", d.Number) AS Address FROM orders o, destinations d WHERE o.orderID = d.orderID;
 
+
+select	startCity, interCity1, interCity2, stopCity from routes WHERE interCity1 LIke "Piatra-Neamt" OR interCity2 LIKE "Piatra-Neamt" or stopCity LIKE "Piatra-Neamt";
+
+
 # some concat
 SELECT routeID, CONCAT(startCity ,' ', interCity1 ,' ', interCity2 ,' ', stopCity) AS Route FROM routes where routeID = 1;
 
@@ -85,4 +89,8 @@ drop table routes;
 drop table address;
 drop table users;
 
+SELECT    userID
+FROM      users
+ORDER BY  userID DESC
+LIMIT     1;
 

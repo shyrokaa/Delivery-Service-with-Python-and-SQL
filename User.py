@@ -1,6 +1,5 @@
 class User:
     def __init__(self):
-
         self.uid = ""
         self.type = 0
         self.first_name = ""
@@ -23,9 +22,7 @@ class User:
         # remove or mark orders as completed for each user
         #
 
-
-
-    def add(self ,uid_in, fname_in, lname_in, email_in, phone_in, city_in, street_in, number_in, password_in):
+    def add(self, uid_in, fname_in, lname_in, email_in, phone_in, city_in, street_in, number_in, password_in):
         self.uid = uid_in
         self.first_name = fname_in
         self.last_name = lname_in
