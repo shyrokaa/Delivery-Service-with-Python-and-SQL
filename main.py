@@ -26,7 +26,6 @@ admin = False
 DATABASE = DB()
 
 
-
 class MainWindow(QMainWindow):
 
     def __init__(self):
@@ -365,7 +364,14 @@ class SignUP(QMainWindow):
         print("data introduced into database")
 
         # adding on screen information to the user
+
+        DATABASE.command.execute("SELECT userID FROM users ORDER BY userID DESC LIMIT 1;")
+        result = DATABASE.command.fetchone()
+        new_id = result["userID"] + 1
+
         win.user.add(
+            str(new_id),
+            0,
             self.fname_text.toPlainText(),
             self.lname_text.toPlainText(),
             self.email_text.toPlainText(),
@@ -411,7 +417,7 @@ class Routes(QMainWindow):
 
         # table to display the routes in the table
         self.tableWidget = QtWidgets.QTableWidget(self)
-        self.tableWidget.setRowCount(5)
+        self.tableWidget.setRowCount(20)
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setColumnWidth(0, 100)
         self.tableWidget.setColumnWidth(1, 200)
@@ -459,22 +465,28 @@ class Profile(QMainWindow):
         self.title.adjustSize()
         self.title.move(120, 0)
 
-        # buttons
+        # buttons ( will depend on the profile)
 
         self.back_btt = QtWidgets.QPushButton(self)
-        self.back_btt.setText("Home")
+        self.back_btt.setText("Sign Out")
         self.back_btt.move(400, 0)
         self.back_btt.clicked.connect(self.back)
 
-        self.orders_btt = QtWidgets.QPushButton(self)
-        self.orders_btt.setText("Your Orders")
-        self.orders_btt.move(150, 300)
-        self.orders_btt.clicked.connect(self.orders)
+        if win.user.type != 1:
+            self.orders_btt = QtWidgets.QPushButton(self)
+            self.orders_btt.setText("Your Orders")
+            self.orders_btt.move(150, 300)
+            self.orders_btt.clicked.connect(self.orders)
 
-        self.neworder_btt = QtWidgets.QPushButton(self)
-        self.neworder_btt.setText("NewOrder")
-        self.neworder_btt.move(150, 350)
-        self.neworder_btt.clicked.connect(self.newOrder)
+            self.neworder_btt = QtWidgets.QPushButton(self)
+            self.neworder_btt.setText("NewOrder")
+            self.neworder_btt.move(150, 350)
+            self.neworder_btt.clicked.connect(self.newOrder)
+        else:
+            self.routes_btt = QtWidgets.QPushButton(self)
+            self.routes_btt.setText("Add New Route")
+            self.routes_btt.move(150, 300)
+            self.routes_btt.clicked.connect(self.routes)
 
         # profile biz
 
@@ -523,16 +535,20 @@ class Profile(QMainWindow):
         win.show()
 
     def orders(self):
-        print("here should be a list of the orders one placed")
         self.orders = Orders()
         self.orders.show()
+        self.hide()
+
+    def routes(self):
+        print("here should be a list of the orders one placed")
+        self.routes = RouteAlter()
+        self.routes.show()
         self.hide()
 
     def newOrder(self):
         self.newo = NewOrder()
         self.newo.show()
         self.hide()
-
 
 
 class Orders(QMainWindow):
@@ -573,6 +589,112 @@ class Orders(QMainWindow):
     def back(self):
         self.hide()
         win.sin.profile.show()
+
+
+class RouteAlter(QMainWindow):
+    def __init__(self):
+        super(RouteAlter, self).__init__()
+        self.setGeometry(200, 200, 500, 500)
+        self.setWindowTitle("Profile")
+        self.initUI()
+
+    def initUI(self):
+        # labels
+        self.title = QtWidgets.QLabel(self)
+        self.title.setFont(QFont('Arial', 20))
+        self.title.setText("Add or remove a route")
+        self.title.adjustSize()
+        self.title.move(150, 50)
+
+        # table of orders
+
+        self.tableWidget = QtWidgets.QTableWidget(self)
+        self.tableWidget.setRowCount(20)
+        self.tableWidget.setColumnCount(2)
+        self.tableWidget.setColumnWidth(0, 100)
+        self.tableWidget.setColumnWidth(1, 200)
+        self.tableWidget.resize(350, 100)
+        self.tableWidget.move(50, 350)
+        DATABASE.loadRoute(self.tableWidget)
+
+        self.startC_label = QtWidgets.QLabel(self)
+        self.startC_label.setFont(QFont('Arial', 10))
+        self.startC_label.setText("Start City:")
+        self.startC_label.adjustSize()
+        self.startC_label.move(100, 100)
+
+        self.interC1_label = QtWidgets.QLabel(self)
+        self.interC1_label.setFont(QFont('Arial', 10))
+        self.interC1_label.setText("Intermediate City 1:")
+        self.interC1_label.adjustSize()
+        self.interC1_label.move(100, 150)
+
+        self.interC2_label = QtWidgets.QLabel(self)
+        self.interC2_label.setFont(QFont('Arial', 10))
+        self.interC2_label.setText("Intermediate City 1:")
+        self.interC2_label.adjustSize()
+        self.interC2_label.move(100, 200)
+
+        self.stopC_label = QtWidgets.QLabel(self)
+        self.stopC_label.setFont(QFont('Arial', 10))
+        self.stopC_label.setText("Stop City:")
+        self.stopC_label.adjustSize()
+        self.stopC_label.move(100, 250)
+
+        self.ID_label = QtWidgets.QLabel(self)
+        self.ID_label.setFont(QFont('Arial', 10))
+        self.ID_label.setText("Route ID to remove:")
+        self.ID_label.adjustSize()
+        self.ID_label.move(100, 300)
+
+        # specific values
+
+        self.startC = QtWidgets.QTextEdit(self)
+        self.startC.move(230, 100)
+
+        self.interC1 = QtWidgets.QTextEdit(self)
+        self.interC1.move(230, 150)
+
+        self.interC2 = QtWidgets.QTextEdit(self)
+        self.interC2.move(230, 200)
+
+        self.stopC = QtWidgets.QTextEdit(self)
+        self.stopC.move(230, 250)
+
+        self.ID = QtWidgets.QTextEdit(self)
+        self.ID.move(230, 300)
+
+        # buttons to work with
+
+        self.back_btt = QtWidgets.QPushButton(self)
+        self.back_btt.setText("Back")
+        self.back_btt.move(400, 0)
+        self.back_btt.clicked.connect(self.back)
+
+        self.insert_btt = QtWidgets.QPushButton(self)
+        self.insert_btt.setText("Insert")
+        self.insert_btt.move(400, 175)
+        self.insert_btt.clicked.connect(self.insert)
+
+        self.delete_btt = QtWidgets.QPushButton(self)
+        self.delete_btt.setText("Remove")
+        self.delete_btt.move(400, 300)
+        self.delete_btt.clicked.connect(self.delete)
+
+    def back(self):
+        self.hide()
+        win.sin.profile.show()
+
+    def insert(self):
+        # INSERTING VALUES AND UPDATING THE UI TABLE
+        DATABASE.add_route(self.startC.toPlainText(),
+                           self.interC1.toPlainText(),
+                           self.interC2.toPlainText(),
+                           self.stopC.toPlainText())
+        DATABASE.loadRoute(self.tableWidget)
+
+    def delete(self):
+        DATABASE.remove_route(self.ID.toPlainText())
 
 
 def main():

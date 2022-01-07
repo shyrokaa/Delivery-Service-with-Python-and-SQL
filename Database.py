@@ -30,6 +30,7 @@ class DB:
             return 1
 
     def look_for_user(self, email, password):
+        print("looking for user...")
         self.command.execute(
             "SELECT * FROM users where Email LIKE '" + email + "';")
 
@@ -48,7 +49,7 @@ class DB:
             return 0
 
     def add_new_user(self, user):
-
+        print("adding a new user...")
         # null data will produce an error signaled to user( wont parse data to database due to it being void)
         if user.first_name != "" \
                 and user.last_name != "" \
@@ -133,7 +134,7 @@ class DB:
                                          + "'" + order.number + "')")
                     self.command.execute("UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
                                          " WHERE driverID = " + str(driver_results["driverID"]))
-
+                    self.db.commit()
                     return 1
                 else:
                     return 0
@@ -160,7 +161,7 @@ class DB:
                                          + "'" + order.number + "')")
                     self.command.execute("UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
                                          " WHERE driverID = " + str(driver_results["driverID"]))
-
+                    self.db.commit()
                     return 1
                 else:
                     return 0
@@ -188,6 +189,7 @@ class DB:
                     self.command.execute(
                         "UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
                         " WHERE driverID = " + str(driver_results["driverID"]))
+                    self.db.commit()
                     return 1
                 else:
                     return 0
@@ -219,14 +221,14 @@ class DB:
                     self.command.execute(
                         "UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
                         " WHERE driverID = " + str(driver_results["driverID"]))
-
+                    self.db.commit()
                     return 1
                 else:
                     return 0
 
             # case B destination in the stop city
             self.command.execute(
-                "SELECT stopCity  FROM routes WHERE startCity LIKE '" + user.City + "' AND stopCity LIKE '" + order.City + "'")
+                "SELECT stopCity  FROM routes WHERE startCity LIKE '" + user.city + "' AND stopCity LIKE '" + order.city + "'")
             destination_results = self.command.fetchone()
             if destination_results:
                 self.command.execute(
@@ -247,6 +249,7 @@ class DB:
                     self.command.execute(
                         "UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
                         " WHERE driverID = " + str(driver_results["driverID"]))
+                    self.db.commit()
                     return 1
                 else:
                     return 0
@@ -278,16 +281,20 @@ class DB:
                     self.command.execute(
                         "UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
                         " WHERE driverID = " + str(driver_results["driverID"]))
-
+                    self.db.commit()
                     return 1
                 else:
                     return 0
 
     def loadRoute(self, table):
-        print("ceva")
+        print("loading routes...")
         i = 1
-        end = 0
-        while end == 0:
+        j = 1
+        self.command.execute("SELECT routeID FROM routes ORDER BY routeID DESC LIMIT 1;")
+        result = self.command.fetchone()
+        count = result["routeID"] + 1
+
+        while i < count:
 
             self.command.execute(
                 "SELECT routeID , CONCAT(startCity ,' ', interCity1 ,' ', interCity2 ,' ', stopCity) " +
@@ -295,15 +302,14 @@ class DB:
 
             result = self.command.fetchone()
             if result:
-                print(result["routeID"])
-                table.setItem(i - 1, 0, QTableWidgetItem(str(result["routeID"])))
-                table.setItem(i - 1, 1, QTableWidgetItem(result["Route"]))
-                i = i + 1
-            else:
-                end = 1
+                table.setItem(j - 1, 0, QTableWidgetItem(str(result["routeID"])))
+                table.setItem(j - 1, 1, QTableWidgetItem(result["Route"]))
+                j = j + 1
+            i = i + 1
+
 
     def loadOrders(self, table):
-        print("ceva")
+        print("loading orders...")
         i = 1
         end = 0
         while end == 0:
@@ -324,7 +330,7 @@ class DB:
 
     def select_existing_user(self, user, email, password):
         self.command.execute(
-            "SELECT u.userID ,u.FirstName , u.LastName, u.Email, u.Phone, a.City, a.Street, a.Number, u.UPassword " +
+            "SELECT u.userID ,u.userType, u.FirstName , u.LastName, u.Email, u.Phone, a.City, a.Street, a.Number, u.UPassword " +
             "FROM users u, address a " +
             "WHERE u.userID = a.userID AND u.Email LIKE '" + email + "';")
 
@@ -333,6 +339,7 @@ class DB:
 
         user.add(
             str(result["userID"]),
+            result["userType"],
             result["FirstName"],
             result["LastName"],
             result["Email"],
@@ -341,3 +348,23 @@ class DB:
             result["Street"],
             result["Number"],
             result["UPassword"])
+
+    def remove_route(self, ID):
+        print("removing route...")
+        self.command.execute("DELETE FROM drivers WHERE routeID = " + ID)
+        self.command.execute("DELETE FROM routes WHERE routeID = " + ID)
+        self.db.commit()
+
+    def add_route(self, startC, interC1, interC2, stopC):
+        print("adding route...")
+        self.command.execute("SELECT routeID FROM routes ORDER BY routeID DESC LIMIT 1;")
+        result = self.command.fetchone()
+        new_id = result["routeID"] + 1
+        self.command.execute("INSERT INTO routes(routeID, startCity, interCity1,interCity2,stopCity) VALUES("
+                             + str(new_id) + ","
+                             + "'" + startC + "',"
+                             + "'" + interC1 + "',"
+                             + "'" + interC2 + "',"
+                             + "'" + stopC + "')"
+                             )
+        self.db.commit()

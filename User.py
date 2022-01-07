@@ -22,8 +22,9 @@ class User:
         # remove or mark orders as completed for each user
         #
 
-    def add(self, uid_in, fname_in, lname_in, email_in, phone_in, city_in, street_in, number_in, password_in):
+    def add(self, uid_in,utype_in, fname_in, lname_in, email_in, phone_in, city_in, street_in, number_in, password_in):
         self.uid = uid_in
+        self.type = utype_in
         self.first_name = fname_in
         self.last_name = lname_in
         self.email = email_in
