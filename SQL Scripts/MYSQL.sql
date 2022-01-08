@@ -99,3 +99,7 @@ SELECT * FROM DRIVERS;
 SELECT driverID  FROM drivers WHERE  space > usedSpace + 100;
 select * from orders;
 select * from destinations;
+
+
+
+SELECT o.orderID, o.driverID, o.name ,CONCAT(d.City, ' Str.', d.Street, ' Nr.', d.Number) AS Address FROM orders o, destinations d WHERE o.orderID = d.orderID;

@@ -18,7 +18,6 @@ signedIn = True
 validProfile = True
 validPass = True
 admin = False
-
 # surface level information about the user of the database
 
 
@@ -52,9 +51,9 @@ class MainWindow(QMainWindow):
         # labels
         self.title = QtWidgets.QLabel(self)
         self.title.setFont(QFont('Arial', 20))
-        self.title.setText("Delivery Services")
+        self.title.setText("Delivery Services Moldova")
         self.title.adjustSize()
-        self.title.move(150, 160)
+        self.title.move(100, 160)
 
         # buttons and such
         # new user
@@ -80,11 +79,13 @@ class MainWindow(QMainWindow):
         self.sup = SignUP()
         self.hide()
         self.sup.show()
+        self.TOGGLE = False
 
     def signIn(self):
         self.sin = SignIN()
         self.sin.show()
         self.hide()
+        self.TOGGLE = True
 
     def routes(self):
         self.rou = Routes()
@@ -162,7 +163,6 @@ class NewOrder(QMainWindow):
 
     def enter(self):
         # check for good pass and email in the database
-        print("data introduced into database")
         win.order.add_base_data(self.name2_text.toPlainText(),
                                 self.city2_text.toPlainText(),
                                 self.street2_text.toPlainText(),
@@ -170,15 +170,25 @@ class NewOrder(QMainWindow):
                                 self.weight_text.toPlainText())
 
         err = DATABASE.add_new_order(win.order, win.user)
-        if not err:
+        if err == 0:
             self.error.setText("No Driver Found")
             self.error.adjustSize()
-            self.hide()
-            win.sin.profile.show()
+        else:
+
+            if win.TOGGLE:
+                self.hide()
+                win.sin.profile.show()
+            else:
+                self.hide()
+                win.sup.profile.show()
 
     def back(self):
-        self.hide()
-        win.sin.profile.show()
+        if win.TOGGLE:
+            self.hide()
+            win.sin.profile.show()
+        else:
+            self.hide()
+            win.sup.profile.show()
 
 
 class SignIN(QMainWindow):
@@ -579,7 +589,7 @@ class Orders(QMainWindow):
         self.tableWidget.resize(360, 400)
         self.tableWidget.move(75, 100)
 
-        DATABASE.loadOrders(self.tableWidget)
+        DATABASE.loadOrders(self.tableWidget,win.user)
 
         self.back_btt = QtWidgets.QPushButton(self)
         self.back_btt.setText("Back")
@@ -588,8 +598,10 @@ class Orders(QMainWindow):
 
     def back(self):
         self.hide()
-        win.sin.profile.show()
-
+        if win.TOGGLE:
+            win.sin.profile.show()
+        else:
+            win.sup.profile.show()
 
 class RouteAlter(QMainWindow):
     def __init__(self):
@@ -683,7 +695,10 @@ class RouteAlter(QMainWindow):
 
     def back(self):
         self.hide()
-        win.sin.profile.show()
+        if win.TOGGLE:
+            win.sin.profile.show()
+        else:
+            win.sup.profile.show()
 
     def insert(self):
         # INSERTING VALUES AND UPDATING THE UI TABLE
@@ -700,6 +715,5 @@ class RouteAlter(QMainWindow):
 def main():
     win.show()
     sys.exit(app.exec_())
-
 
 main()

@@ -6,7 +6,6 @@ import os
 
 import mysql.connector
 
-
 class DB:
     def __init__(self):
         self.db = mysql.connector.connect(host="localhost", user="root", passwd="root", database="ds")
@@ -114,11 +113,14 @@ class DB:
         if start_results:
             # case A destination in the intermediary city 1
             self.command.execute(
-                "SELECT interCity1  FROM routes WHERE startCity LIKE '" + user.city + "' AND interCity1 LIKE '" + order.city + "'")
+                "SELECT routeID, interCity1  FROM routes WHERE startCity LIKE '" + user.city + "' AND interCity1 LIKE '"
+                + order.city + "'")
+
             destination_results = self.command.fetchone()
             if destination_results:
                 self.command.execute(
-                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight))
+                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight) + " AND routeID ="
+                    + str(destination_results["routeID"]))
                 driver_results = self.command.fetchone()
                 if driver_results:
                     self.command.execute("INSERT INTO orders(orderID,userID,driverID,name,weight) VALUES("
@@ -132,47 +134,21 @@ class DB:
                                          + "'" + order.city + "', "
                                          + "'" + order.street + "', "
                                          + "'" + order.number + "')")
-                    self.command.execute("UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
-                                         " WHERE driverID = " + str(driver_results["driverID"]))
+                    self.command.execute(
+                        "UPDATE drivers SET usedSpace =  usedSpace + " + str(order.weight) +
+                        " WHERE driverID = " + str(driver_results["driverID"]))
                     self.db.commit()
                     return 1
-                else:
-                    return 0
+
 
             # case B destination in the intermediary city 2
             self.command.execute(
-                "SELECT interCity2  FROM routes WHERE startCity LIKE '" + user.city + "' AND interCity2 LIKE '" + order.city + "'")
+                "SELECT routeID, interCity2  FROM routes WHERE startCity LIKE '" + user.city + "' AND interCity2 LIKE '" + order.city + "'")
             destination_results = self.command.fetchone()
             if destination_results:
                 self.command.execute(
-                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight))
-                driver_results = self.command.fetchone()
-                if driver_results:
-                    self.command.execute("INSERT INTO orders(orderID,userID,driverID,name,weight) VALUES("
-                                         + str(new_id) + ", "
-                                         + user.uid + ", "
-                                         + str(driver_results["driverID"]) + ", "
-                                         + "'" + order.name + "', "
-                                         + order.weight + ")")
-                    self.command.execute("INSERT INTO destinations(orderID,city,street,number) VALUES("
-                                         + str(new_id) + ", "
-                                         + "'" + order.city + "', "
-                                         + "'" + order.street + "', "
-                                         + "'" + order.number + "')")
-                    self.command.execute("UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
-                                         " WHERE driverID = " + str(driver_results["driverID"]))
-                    self.db.commit()
-                    return 1
-                else:
-                    return 0
-
-            # case C destination in the intermediary city 2
-            self.command.execute(
-                "SELECT stopCity  FROM routes WHERE startCity LIKE '" + user.city + "' AND stopCity LIKE '" + order.city + "'")
-            destination_results = self.command.fetchone()
-            if destination_results:
-                self.command.execute(
-                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight))
+                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight) + " AND routeID ="
+                    + str(destination_results["routeID"]))
                 driver_results = self.command.fetchone()
                 if driver_results:
                     self.command.execute("INSERT INTO orders(orderID,userID,driverID,name,weight) VALUES("
@@ -187,12 +163,38 @@ class DB:
                                          + "'" + order.street + "', "
                                          + "'" + order.number + "')")
                     self.command.execute(
-                        "UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
+                        "UPDATE drivers SET usedSpace =  usedSpace + " + str(order.weight) +
                         " WHERE driverID = " + str(driver_results["driverID"]))
                     self.db.commit()
                     return 1
-                else:
-                    return 0
+
+
+            # case C destination in the intermediary city 2
+            self.command.execute(
+                "SELECT routeID, stopCity  FROM routes WHERE startCity LIKE '" + user.city + "' AND stopCity LIKE '" + order.city + "'")
+            destination_results = self.command.fetchone()
+            if destination_results:
+                self.command.execute(
+                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight) + " AND routeID ="
+                    + str(destination_results["routeID"]))
+                driver_results = self.command.fetchone()
+                if driver_results:
+                    self.command.execute("INSERT INTO orders(orderID,userID,driverID,name,weight) VALUES("
+                                         + str(new_id) + ", "
+                                         + user.uid + ", "
+                                         + str(driver_results["driverID"]) + ", "
+                                         + "'" + order.name + "', "
+                                         + order.weight + ")")
+                    self.command.execute("INSERT INTO destinations(orderID,city,street,number) VALUES("
+                                         + str(new_id) + ", "
+                                         + "'" + order.city + "', "
+                                         + "'" + order.street + "', "
+                                         + "'" + order.number + "')")
+                    self.command.execute(
+                        "UPDATE drivers SET usedSpace =  usedSpace + " + str(order.weight) +
+                        " WHERE driverID = " + str(driver_results["driverID"]))
+                    self.db.commit()
+                    return 1
 
         # case 2) inter1 of route is the city of the pick-up point
         self.command.execute("SELECT interCity1  FROM routes WHERE startCity LIKE '" + user.city + "'")
@@ -200,11 +202,12 @@ class DB:
         if start_results:
             # case A destination in the intermediary city 2
             self.command.execute(
-                "SELECT interCity2  FROM routes WHERE startCity LIKE '" + user.city + "' AND interCity2 LIKE '" + order.city + "'")
+                "SELECT routeID, interCity2  FROM routes WHERE startCity LIKE '" + user.city + "' AND interCity2 LIKE '" + order.city + "'")
             destination_results = self.command.fetchone()
             if destination_results:
                 self.command.execute(
-                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight))
+                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight) + " AND routeID ="
+                    + str(destination_results["routeID"]))
                 driver_results = self.command.fetchone()
                 if driver_results:
                     self.command.execute("INSERT INTO orders(orderID,userID,driverID,name,weight) VALUES("
@@ -219,20 +222,20 @@ class DB:
                                          + "'" + order.street + "', "
                                          + "'" + order.number + "')")
                     self.command.execute(
-                        "UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
+                        "UPDATE drivers SET usedSpace =  usedSpace + " + str(order.weight) +
                         " WHERE driverID = " + str(driver_results["driverID"]))
                     self.db.commit()
                     return 1
-                else:
-                    return 0
+
 
             # case B destination in the stop city
             self.command.execute(
-                "SELECT stopCity  FROM routes WHERE startCity LIKE '" + user.city + "' AND stopCity LIKE '" + order.city + "'")
+                "SELECT routeID, stopCity  FROM routes WHERE startCity LIKE '" + user.city + "' AND stopCity LIKE '" + order.city + "'")
             destination_results = self.command.fetchone()
             if destination_results:
                 self.command.execute(
-                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight))
+                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight) + " AND routeID ="
+                    + str(destination_results["routeID"]))
                 driver_results = self.command.fetchone()
                 if driver_results:
                     self.command.execute("INSERT INTO orders(orderID,userID,driverID,name,weight) VALUES("
@@ -247,12 +250,11 @@ class DB:
                                          + "'" + order.street + "', "
                                          + "'" + order.number + "')")
                     self.command.execute(
-                        "UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
+                        "UPDATE drivers SET usedSpace =  usedSpace + " + str(order.weight) +
                         " WHERE driverID = " + str(driver_results["driverID"]))
                     self.db.commit()
                     return 1
-                else:
-                    return 0
+
 
         # case 3) inter2 of route is the city of the pick-up point
         self.command.execute("SELECT interCity1  FROM routes WHERE startCity LIKE '" + user.city + "'")
@@ -260,11 +262,12 @@ class DB:
         if start_results:
             # case A destination in the stop city
             self.command.execute(
-                "SELECT stopCity  FROM routes WHERE startCity LIKE '" + user.city + "' AND stopCity LIKE '" + order.city + "'")
+                "SELECT routeID,stopCity  FROM routes WHERE startCity LIKE '" + user.city + "' AND stopCity LIKE '" + order.city + "'")
             destination_results = self.command.fetchone()
             if destination_results:
                 self.command.execute(
-                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight))
+                    "SELECT driverID  FROM drivers WHERE  space > usedSpace + " + str(order.weight) + " AND routeID ="
+                    + str(destination_results["routeID"]))
                 driver_results = self.command.fetchone()
                 if driver_results:
                     self.command.execute("INSERT INTO orders(orderID,userID,driverID,name,weight) VALUES("
@@ -279,12 +282,11 @@ class DB:
                                          + "'" + order.street + "', "
                                          + "'" + order.number + "')")
                     self.command.execute(
-                        "UPDATE drivers SET usedSpace = space - usedSpace - " + str(order.weight) +
+                        "UPDATE drivers SET usedSpace =  usedSpace + " + str(order.weight) +
                         " WHERE driverID = " + str(driver_results["driverID"]))
                     self.db.commit()
                     return 1
-                else:
-                    return 0
+        return 0
 
     def loadRoute(self, table):
         print("loading routes...")
@@ -308,14 +310,14 @@ class DB:
             i = i + 1
 
 
-    def loadOrders(self, table):
+    def loadOrders(self, table,user):
         print("loading orders...")
         i = 1
         end = 0
         while end == 0:
             self.command.execute(
                 "SELECT o.orderID, o.driverID, o.name ,CONCAT(d.City, ' Str.', d.Street, ' Nr.', d.Number) " +
-                "AS Address FROM orders o, destinations d WHERE o.orderID = " + str(i))
+                "AS Address FROM orders o, destinations d WHERE d.orderID = o.orderID AND o.orderID = " + str(i) + " AND o.userID = " + user.uid)
             result = self.command.fetchone()
             if result:
 
