@@ -6,6 +6,7 @@ import os
 
 import mysql.connector
 
+
 class DB:
     def __init__(self):
         self.db = mysql.connector.connect(host="localhost", user="root", passwd="root", database="ds")
@@ -140,7 +141,6 @@ class DB:
                     self.db.commit()
                     return 1
 
-
             # case B destination in the intermediary city 2
             self.command.execute(
                 "SELECT routeID, interCity2  FROM routes WHERE startCity LIKE '" + user.city + "' AND interCity2 LIKE '" + order.city + "'")
@@ -167,7 +167,6 @@ class DB:
                         " WHERE driverID = " + str(driver_results["driverID"]))
                     self.db.commit()
                     return 1
-
 
             # case C destination in the intermediary city 2
             self.command.execute(
@@ -227,7 +226,6 @@ class DB:
                     self.db.commit()
                     return 1
 
-
             # case B destination in the stop city
             self.command.execute(
                 "SELECT routeID, stopCity  FROM routes WHERE startCity LIKE '" + user.city + "' AND stopCity LIKE '" + order.city + "'")
@@ -254,7 +252,6 @@ class DB:
                         " WHERE driverID = " + str(driver_results["driverID"]))
                     self.db.commit()
                     return 1
-
 
         # case 3) inter2 of route is the city of the pick-up point
         self.command.execute("SELECT interCity1  FROM routes WHERE startCity LIKE '" + user.city + "'")
@@ -309,26 +306,50 @@ class DB:
                 j = j + 1
             i = i + 1
 
-
-    def loadOrders(self, table,user):
-        print("loading orders...")
+    def loadDriver(self, table):
+        print("loading drivers...")
         i = 1
-        end = 0
-        while end == 0:
+        j = 1
+        self.command.execute("SELECT driverID FROM drivers ORDER BY driverID DESC LIMIT 1;")
+        result = self.command.fetchone()
+        count = result["driverID"] + 1
+
+        while i < count:
+
             self.command.execute(
-                "SELECT o.orderID, o.driverID, o.name ,CONCAT(d.City, ' Str.', d.Street, ' Nr.', d.Number) " +
-                "AS Address FROM orders o, destinations d WHERE d.orderID = o.orderID AND o.orderID = " + str(i) + " AND o.userID = " + user.uid)
+                "SELECT d.driverID, d.routeID , " +
+                "CONCAT(r.startCity ,' ', r.interCity1 ,' ', r.interCity2 ,' ', r.stopCity) " +
+                "AS Route FROM routes r , drivers d WHERE r.routeID = d.routeID AND driverID =" + str(i))
+
             result = self.command.fetchone()
             if result:
+                table.setItem(j - 1, 0, QTableWidgetItem(str(result["driverID"])))
+                table.setItem(j - 1, 1, QTableWidgetItem(str(result["routeID"])))
+                table.setItem(j - 1, 2, QTableWidgetItem(result["Route"]))
+                j = j + 1
+            i = i + 1
 
-                table.setItem(i - 1, 0, QTableWidgetItem(str(result["orderID"])))
-                table.setItem(i - 1, 1, QTableWidgetItem(str(result["driverID"])))
-                table.setItem(i - 1, 2, QTableWidgetItem(result["name"]))
-                table.setItem(i - 1, 3, QTableWidgetItem(result["Address"]))
+    def loadOrders(self, table, user):
+        print("loading orders...")
+        i = 1
+        j = 1
+        self.command.execute("SELECT orderID FROM orders ORDER BY orderID DESC LIMIT 1;")
+        result = self.command.fetchone()
+        count = result["orderID"] + 1
 
-                i = i + 1
-            else:
-                end = 1
+        while i < count:
+            self.command.execute(
+                "SELECT o.orderID, o.driverID, o.name ,CONCAT(d.City, ' Str.', d.Street, ' Nr.', d.Number) " +
+                "AS Address FROM orders o, destinations d WHERE d.orderID = o.orderID AND o.orderID = " + str(
+                    i) + " AND o.userID = " + user.uid)
+            result = self.command.fetchone()
+            if result:
+                table.setItem(j - 1, 0, QTableWidgetItem(str(result["orderID"])))
+                table.setItem(j - 1, 1, QTableWidgetItem(str(result["driverID"])))
+                table.setItem(j - 1, 2, QTableWidgetItem(result["name"]))
+                table.setItem(j - 1, 3, QTableWidgetItem(result["Address"]))
+                j = j + 1
+            i = i + 1
 
     def select_existing_user(self, user, email, password):
         self.command.execute(
@@ -353,9 +374,17 @@ class DB:
 
     def remove_route(self, ID):
         print("removing route...")
-        self.command.execute("DELETE FROM drivers WHERE routeID = " + ID)
-        self.command.execute("DELETE FROM routes WHERE routeID = " + ID)
-        self.db.commit()
+
+        self.command.execute("SELECT o.orderID, d.driverID FROM orders o, drivers d " +
+                             "WHERE d.driverID = o.driverID AND d.routeID = " + ID)
+        result = self.command.fetchone()
+        if result:
+            return 1
+        else:
+            self.command.execute("DELETE FROM drivers WHERE routeID = " + ID)
+            self.command.execute("DELETE FROM routes WHERE routeID = " + ID)
+            self.db.commit()
+        return 0
 
     def add_route(self, startC, interC1, interC2, stopC):
         print("adding route...")
@@ -370,3 +399,66 @@ class DB:
                              + "'" + stopC + "')"
                              )
         self.db.commit()
+
+    def remove_driver(self, ID):
+        print("removing route...")
+
+        self.command.execute("SELECT o.orderID, d.driverID FROM orders o, drivers d " +
+                             "WHERE d.driverID = o.driverID AND d.driverID = " + ID)
+        result = self.command.fetchone()
+        if result:
+            return 1
+        else:
+            self.command.execute("DELETE FROM drivers WHERE driverID = " + ID)
+            self.db.commit()
+        return 0
+
+    def add_driver(self, RID, space, uspace):
+        print("adding route...")
+        self.command.execute("SELECT driverID FROM drivers ORDER BY driverID DESC LIMIT 1;")
+        result = self.command.fetchone()
+        new_id = result["driverID"] + 1
+        self.command.execute("INSERT INTO drivers(driverID, routeID, space,usedSpace) VALUES("
+                             + str(new_id) + ","
+                             + RID + ","
+                             + space + ","
+                             + uspace + ")"
+                             )
+        self.db.commit()
+
+    def remove_order(self, ID):
+        print("removing order...")
+
+        self.command.execute("SELECT * FROM orders WHERE orderID = " + ID)
+        order = self.command.fetchone()
+
+        self.command.execute(
+            "SELECT o.orderID, d.driverID FROM orders o, drivers d WHERE d.driverID = o.driverID AND o.orderID = " + ID)
+        driver = self.command.fetchone()
+        self.command.execute(
+            "UPDATE drivers SET usedSpace =  usedSpace - " + str(order["weight"]) +
+            " WHERE driverID = " + str(driver["driverID"]))
+        self.command.execute("DELETE FROM destinations WHERE orderID = " + ID)
+        self.command.execute("DELETE FROM orders WHERE orderID = " + ID)
+        self.db.commit()
+
+    def loadallOrders(self, table):
+        print("loading orders...")
+        i = 1
+        j = 1
+        self.command.execute("SELECT orderID FROM orders ORDER BY orderID DESC LIMIT 1;")
+        result = self.command.fetchone()
+        count = result["orderID"] + 1
+
+        while i < count:
+            self.command.execute(
+                "SELECT o.orderID , u.FirstName , o.name , o.weight " +
+                "FROM orders o,users u WHERE u.userID = o.userID AND o.orderID =" + str(i))
+            result = self.command.fetchone()
+            if result:
+                table.setItem(j - 1, 0, QTableWidgetItem(str(result["orderID"])))
+                table.setItem(j - 1, 1, QTableWidgetItem(result["FirstName"]))
+                table.setItem(j - 1, 2, QTableWidgetItem(result["name"]))
+                table.setItem(j - 1, 3, QTableWidgetItem(str(result["weight"])))
+                j = j + 1
+            i = i + 1

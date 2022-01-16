@@ -432,7 +432,7 @@ class Routes(QMainWindow):
         self.tableWidget.setColumnWidth(0, 100)
         self.tableWidget.setColumnWidth(1, 200)
         self.tableWidget.resize(350, 350)
-        self.tableWidget.move(150, 100)
+        self.tableWidget.move(100, 100)
         DATABASE.loadRoute(self.tableWidget)
 
         # buttons
@@ -498,6 +498,16 @@ class Profile(QMainWindow):
             self.routes_btt.move(150, 300)
             self.routes_btt.clicked.connect(self.routes)
 
+            self.drivers_btt = QtWidgets.QPushButton(self)
+            self.drivers_btt.setText("Add New Driver")
+            self.drivers_btt.move(150, 350)
+            self.drivers_btt.clicked.connect(self.drivers)
+
+            self.orders_btt = QtWidgets.QPushButton(self)
+            self.orders_btt.setText("Complete Orders")
+            self.orders_btt.move(150, 400)
+            self.orders_btt.clicked.connect(self.ordersC)
+
         # profile biz
 
         # user id
@@ -553,6 +563,18 @@ class Profile(QMainWindow):
         print("here should be a list of the orders one placed")
         self.routes = RouteAlter()
         self.routes.show()
+        self.hide()
+
+    def drivers(self):
+        print("here should be a list of the drivers one placed")
+        self.drivers = DriverAlter()
+        self.drivers.show()
+        self.hide()
+
+    def ordersC(self):
+        print("here should be a list of the orders")
+        self.ordersC = OrderAlter()
+        self.ordersC.show()
         self.hide()
 
     def newOrder(self):
@@ -659,6 +681,12 @@ class RouteAlter(QMainWindow):
         self.ID_label.adjustSize()
         self.ID_label.move(100, 300)
 
+        self.err_label = QtWidgets.QLabel(self)
+        self.err_label.setFont(QFont('Arial', 10))
+        self.err_label.setText("")
+        self.err_label.adjustSize()
+        self.err_label.move(50, 450)
+
         # specific values
 
         self.startC = QtWidgets.QTextEdit(self)
@@ -709,8 +737,200 @@ class RouteAlter(QMainWindow):
         DATABASE.loadRoute(self.tableWidget)
 
     def delete(self):
-        DATABASE.remove_route(self.ID.toPlainText())
+        error = DATABASE.remove_route(self.ID.toPlainText())
+        if error:
+            self.err_label.setText("orders exist on this route!")
+            self.err_label.adjustSize()
+        else:
+            self.err_label.setText("")
+            self.err_label.adjustSize()
 
+
+class DriverAlter(QMainWindow):
+    def __init__(self):
+        super(DriverAlter, self).__init__()
+        self.setGeometry(200, 200, 500, 500)
+        self.setWindowTitle("Profile")
+        self.initUI()
+
+    def initUI(self):
+        # labels
+        self.title = QtWidgets.QLabel(self)
+        self.title.setFont(QFont('Arial', 20))
+        self.title.setText("Add or remove a driver")
+        self.title.adjustSize()
+        self.title.move(150, 50)
+
+        # table of orders
+
+        self.tableWidget = QtWidgets.QTableWidget(self)
+        self.tableWidget.setRowCount(20)
+        self.tableWidget.setColumnCount(3)
+        self.tableWidget.setColumnWidth(0, 50)
+        self.tableWidget.setColumnWidth(1, 50)
+        self.tableWidget.setColumnWidth(2, 200)
+        self.tableWidget.resize(350, 100)
+        self.tableWidget.move(50, 350)
+        DATABASE.loadDriver(self.tableWidget)
+
+
+        self.RID_label = QtWidgets.QLabel(self)
+        self.RID_label.setFont(QFont('Arial', 10))
+        self.RID_label.setText("Route ID:")
+        self.RID_label.adjustSize()
+        self.RID_label.move(100, 100)
+
+        self.space_label = QtWidgets.QLabel(self)
+        self.space_label.setFont(QFont('Arial', 10))
+        self.space_label.setText("space:")
+        self.space_label.adjustSize()
+        self.space_label.move(100, 150)
+
+        self.uspace_label = QtWidgets.QLabel(self)
+        self.uspace_label.setFont(QFont('Arial', 10))
+        self.uspace_label.setText("used space:")
+        self.uspace_label.adjustSize()
+        self.uspace_label.move(100, 200)
+
+        self.ID_label = QtWidgets.QLabel(self)
+        self.ID_label.setFont(QFont('Arial', 10))
+        self.ID_label.setText("Driver ID to remove:")
+        self.ID_label.adjustSize()
+        self.ID_label.move(100, 300)
+
+        self.err_label = QtWidgets.QLabel(self)
+        self.err_label.setFont(QFont('Arial', 10))
+        self.err_label.setText("")
+        self.err_label.adjustSize()
+        self.err_label.move(50, 450)
+
+
+        # specific values
+
+        self.RID = QtWidgets.QTextEdit(self)
+        self.RID.move(230, 100)
+
+        self.space = QtWidgets.QTextEdit(self)
+        self.space.move(230, 150)
+
+        self.uspace = QtWidgets.QTextEdit(self)
+        self.uspace.move(230, 200)
+
+
+        self.ID = QtWidgets.QTextEdit(self)
+        self.ID.move(230, 300)
+
+        # buttons to work with
+
+        self.back_btt = QtWidgets.QPushButton(self)
+        self.back_btt.setText("Back")
+        self.back_btt.move(400, 0)
+        self.back_btt.clicked.connect(self.back)
+
+        self.insert_btt = QtWidgets.QPushButton(self)
+        self.insert_btt.setText("Insert")
+        self.insert_btt.move(400, 175)
+        self.insert_btt.clicked.connect(self.insert)
+
+        self.delete_btt = QtWidgets.QPushButton(self)
+        self.delete_btt.setText("Remove")
+        self.delete_btt.move(400, 300)
+        self.delete_btt.clicked.connect(self.delete)
+
+    def back(self):
+        self.hide()
+        if win.TOGGLE:
+            win.sin.profile.show()
+        else:
+            win.sup.profile.show()
+
+    def insert(self):
+        # INSERTING VALUES AND UPDATING THE UI TABLE
+        DATABASE.add_driver(self.RID.toPlainText(),
+                           self.space.toPlainText(),
+                           self.uspace.toPlainText())
+        DATABASE.loadRoute(self.tableWidget)
+
+    def delete(self):
+        error = DATABASE.remove_driver(self.ID.toPlainText())
+        if error:
+            self.err_label.setText("driver has orders that are not complete!")
+            self.err_label.adjustSize()
+        else:
+            self.err_label.setText("")
+            self.err_label.adjustSize()
+
+
+
+
+class OrderAlter(QMainWindow):
+    def __init__(self):
+        super(OrderAlter, self).__init__()
+        self.setGeometry(200, 200, 500, 500)
+        self.setWindowTitle("Profile")
+        self.initUI()
+
+    def initUI(self):
+        # labels
+        self.title = QtWidgets.QLabel(self)
+        self.title.setFont(QFont('Arial', 20))
+        self.title.setText("Complete Orders")
+        self.title.adjustSize()
+        self.title.move(150, 50)
+
+        # table of orders
+
+        self.tableWidget = QtWidgets.QTableWidget(self)
+        self.tableWidget.setRowCount(20)
+        self.tableWidget.setColumnCount(4)
+        self.tableWidget.setColumnWidth(0, 50)
+        self.tableWidget.setColumnWidth(1, 50)
+        self.tableWidget.setColumnWidth(2, 100)
+        self.tableWidget.setColumnWidth(3, 50)
+
+        self.tableWidget.resize(350, 200)
+        self.tableWidget.move(50, 250)
+        DATABASE.loadallOrders(self.tableWidget)
+
+        self.ID_label = QtWidgets.QLabel(self)
+        self.ID_label.setFont(QFont('Arial', 10))
+        self.ID_label.setText("Order ID to complete:")
+        self.ID_label.adjustSize()
+        self.ID_label.move(100, 200)
+
+        self.err_label = QtWidgets.QLabel(self)
+        self.err_label.setFont(QFont('Arial', 10))
+        self.err_label.setText("")
+        self.err_label.adjustSize()
+        self.err_label.move(50, 450)
+
+
+        # specific values
+
+        self.ID = QtWidgets.QTextEdit(self)
+        self.ID.move(230, 200)
+
+        # buttons to work with
+
+        self.back_btt = QtWidgets.QPushButton(self)
+        self.back_btt.setText("Back")
+        self.back_btt.move(400, 0)
+        self.back_btt.clicked.connect(self.back)
+
+        self.delete_btt = QtWidgets.QPushButton(self)
+        self.delete_btt.setText("Complete")
+        self.delete_btt.move(400, 200)
+        self.delete_btt.clicked.connect(self.delete)
+
+    def back(self):
+        self.hide()
+        if win.TOGGLE:
+            win.sin.profile.show()
+        else:
+            win.sup.profile.show()
+
+    def delete(self):
+        DATABASE.remove_order(self.ID.toPlainText())
 
 def main():
     win.show()
